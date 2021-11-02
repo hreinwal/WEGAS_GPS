@@ -41,20 +41,62 @@ gps$Long <- NMEA2DD(gps$Long_raw)
 
 ### Merge WEGAS & GPS ### ------------------------------------------------------
 # both datasets can by merged by "TIMESTAMP_GPS" column
-comb = merge(dat, gps, by = "TIMESTAMP_GPS", all.x = T, all.y = F)
+comb = merge(dat, gps, by = "TIMESTAMP_GPS", all.x = T)
 stopifnot(nrow(comb) == nrow(dat)) # Quick Sum check
 
 dir.create("merged", showWarnings = F)
 n = sub(".dat$",".GPS",files)
 #write.table(comb, file = paste0("fileMerge.out/",n,".tab),row.names = F)
-write.csv(comb, file = paste0("merged/",n,".csv"),row.names = F)
+write.csv(comb, file = paste0("merged/",n,".csv"), row.names = F)
 
 ################################################################################
 
-#comb = dat.ls[[1]]
+
 #' Now let's try to establish the filter function Flo was talking about.
-#' The idea is that the next 18 measurements (10sec / measurement) after transission
-#' from water to air and from air to water should be removed as the system wasn't quite 
+#' The idea is that the next 3 min or 18 measurements (10sec / measurement = 3 min) after 
+#' transition from water to air and from air to water should be removed as the system wasn't quite 
 #' stable during those measurements. Find a nice way to do that.
+#' 
+#' MeasEQ column defines if measurement was conducted in water (0) or in air (-1).
+#' Hence, find a way to specify the rows in which the values shift from 0 to -1
+#' or from -1 to 0 and the remove the following 18 (= 3 min) measurements. 
+#df = dat.ls[[1]]
 
+# PARAMETERS 
+rmvMin = 3 #remove minutes; removes all measurements after a transition conducted within those minutes
+sampSec = 10 # sample seconds; time between each measurement timepoint
 
+filterPostTransi <- function(df, rmvMin=3, sampSec=10, transCol="MeasEQ"){
+  mEQ <- data.frame()
+  for(i in 1:(nrow(df)-1)){
+    tmp <- c( df[i,transCol], df[i+1,transCol] )
+    stopifnot(length(tmp) == 2) #SumCheck
+    mEQ[i,1:2] <- tmp
+  }
+  stopifnot(nrow(mEQ) == nrow(df)-1) #SumCheck
+  # Get rows in which transition occurs
+  Trow <- which(apply(mEQ,1,function(x){ if(x[1] == x[2]){FALSE}else{TRUE} }) == T)
+  message(length(Trow)," transition timepoints detected.")
+  # Compute rows to be removed after each transition
+  n = ceiling((rmvMin * 60)/sampSec)
+  message(n," sample timepoints post transition will be removed (",round((n*sampSec/60),1)," min).")
+  cutOut <- c()
+  for(i in Trow){
+    rmv = seq(i, i+n, 1)
+    if(max(rmv) > nrow(df)){rmv = seq(i, nrow(df), 1)}
+    cutOut <- append(cutOut, rmv)
+  }
+  # Safety check
+  rmvMinMAX = round((min(diff(Trow))*sampSec/60),2)
+  stopifnot(rmvMin < rmvMinMAX)
+  # clean out df
+  df.cl <- df[-cutOut,]
+  stopifnot(nrow(df.cl) == nrow(df)-length(cutOut)) #Final Sumcheck
+  message(length(cutOut)," timepoints were removed in total.")
+  return(df.cl)
+}
+comb2 = filterPostTransi(comb)
+
+n = sub(".dat$",".GPS.clean",files)
+write.csv(comb2, file = paste0("merged/",n,".csv"), row.names = F)
+#### DONE! :) #### 

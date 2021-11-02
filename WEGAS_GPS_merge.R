@@ -113,6 +113,40 @@ for(i in files){
   }
 }
 
+### Filter out post transition timepoints ### ----------------------------------
+filterPostTransi <- function(df, rmvMin=3, sampSec=10, transCol="MeasEQ"){
+  mEQ <- data.frame()
+  for(i in 1:(nrow(df)-1)){
+    tmp <- c( df[i,transCol], df[i+1,transCol] )
+    stopifnot(length(tmp) == 2) #SumCheck
+    mEQ[i,1:2] <- tmp
+  }
+  stopifnot(nrow(mEQ) == nrow(df)-1) #SumCheck
+  # Get rows in which transition occurs
+  Trow <- which(apply(mEQ,1,function(x){ if(x[1] == x[2]){FALSE}else{TRUE} }) == T)
+  message(length(Trow)," transition timepoints detected.")
+  # Compute rows to be removed after each transition
+  n = ceiling((rmvMin * 60)/sampSec)
+  message(n," sample timepoints post transition will be removed (",round((n*sampSec/60),1)," min).")
+  cutOut <- c()
+  for(i in Trow){
+    rmv = seq(i, i+n, 1)
+    if(max(rmv) > nrow(df)){rmv = seq(i, nrow(df), 1)}
+    cutOut <- append(cutOut, rmv)
+  }
+  # Safety check
+  rmvMinMAX = round((min(diff(Trow))*sampSec/60),2)
+  stopifnot(rmvMin < rmvMinMAX)
+  # clean out df
+  df.cl <- df[-cutOut,]
+  stopifnot(nrow(df.cl) == nrow(df)-length(cutOut)) #Final Sumcheck
+  message(length(cutOut)," timepoints were removed in total.")
+  return(df.cl)
+}
+m = 3 # minutes to be removed post transition timepoint
+message("\nRemoving transition timepoints:\t",m," min post transition")
+dat2.ls <- lapply(dat.ls, filterPostTransi, rmvMin = m)
+message("Done!\n")
 
 ### Exporting merged files ### -------------------------------------------------
 out = "merged" #output dir
@@ -120,6 +154,7 @@ dir.create(out, showWarnings = F)
 for(i in names(dat.ls)){
   message(paste("\nExporting merged files for measurement:",i,"..."))
   write.csv(dat.ls[[i]], file = paste0(out,"/",i,"_WEGAS.GPS.csv"),row.names = F)
+  write.csv(dat2.ls[[i]], file = paste0(out,"/",i,"_WEGAS.GPS.",m,"minRmv.csv"),row.names = F)
   message("Done!\n")
 }
 rm(i,n)
