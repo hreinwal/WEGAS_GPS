@@ -1,6 +1,6 @@
-###############################
-###   DAT file filtering   ###
-##############################
+##################################################
+###   WEGAS and GPS file merge and filtering   ###
+##################################################
 
 # Author: Hannes Reinwald 
 # Contact: hannes-reinwald@web.de
@@ -107,7 +107,7 @@ for(i in files){
   n = sub("_WEGAS.dat$","",i)
   # Check if corresponding GPS file is provided
   if(file.exists(sub("WEGAS.dat","GPS.csv",i))) {
-    dat.ls[[n]] = combineWEGAS.GPS(files)
+    dat.ls[[n]] = combineWEGAS.GPS(i)
   } else {
     message("No GPS file provided for:\t",files)
   }
@@ -124,7 +124,7 @@ filterPostTransi <- function(df, rmvMin=3, sampSec=10, transCol="MeasEQ"){
   stopifnot(nrow(mEQ) == nrow(df)-1) #SumCheck
   # Get rows in which transition occurs
   Trow <- which(apply(mEQ,1,function(x){ if(x[1] == x[2]){FALSE}else{TRUE} }) == T)
-  message(length(Trow)," transition timepoints detected.")
+  message("\n",length(Trow)," transition timepoints detected.")
   # Compute rows to be removed after each transition
   n = ceiling((rmvMin * 60)/sampSec)
   message(n," sample timepoints post transition will be removed (",round((n*sampSec/60),1)," min).")
