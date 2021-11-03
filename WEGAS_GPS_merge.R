@@ -30,7 +30,8 @@ files = list.files(pattern = "WEGAS.dat")
 gpsF  = sub("WEGAS.dat","GPS.csv",files)
 
 # Quick sum check
-if(length(files) == 0) {message("No '.dat' files were found!\nPlease check your working directory.\n")
+if(length(files) == 0) {
+  message("No '.dat' files were found!\nPlease check your working directory.\n")
   } else {message("Number of provided 'WEGAS.dat' files:\t",paste(length(files)))}
 stopifnot(length(files) > 0)
 if(length(gpsF) > length(files)){warning("More GPS files than WEGAS files provided!\n")}
@@ -51,7 +52,7 @@ combineWEGAS.GPS <- function(wegasFile, gpsFile=sub("WEGAS.dat","GPS.csv",wegasF
     message("First rows containing only units were removed from WEGAS files.")
     dat = dat[-c(1,2),]
   }
-  dat[,3:ncol(dat)] <- sapply(dat[,3:ncol(dat)],as.numeric) # set variables as numeric
+  dat[,2:ncol(dat)] <- sapply(dat[,2:ncol(dat)],as.numeric) # set variables as numeric
   
   ## TIME Correction in WEGAS ##
   # It is better to correct the time stamp in the WEGAS file as the time in GPS location
@@ -94,12 +95,13 @@ combineWEGAS.GPS <- function(wegasFile, gpsFile=sub("WEGAS.dat","GPS.csv",wegasF
   ### Merge WEGAS & GPS ### ------------------------------------------------------
   # both datasets can by merged by "TIMESTAMP_GPS" column
   message("Merging data frames by WEGAS corrected timestamp")
-  comb = merge(dat, gps, by = "TIMESTAMP_GPS", all.x = T, all.y = F)
+  comb = merge(x = dat, y = gps, by = "TIMESTAMP_GPS", all.x = T)
   stopifnot(nrow(comb) == nrow(dat)) # Quick Sum check
   message("Done!\n")
   return(comb)
 }
-#x = combineWEGAS.GPS(files)
+#x = combineWEGAS.GPS(files[1])
+
 
 ### Import & Merge Data ### ----------------------------------------------------
 dat.ls <- list()
@@ -143,6 +145,7 @@ filterPostTransi <- function(df, rmvMin=3, sampSec=10, transCol="MeasEQ"){
   message(length(cutOut)," timepoints were removed in total.")
   return(df.cl)
 }
+
 m = 3 # minutes to be removed post transition timepoint
 message("\nRemoving transition timepoints:\t",m," min post transition")
 dat2.ls <- lapply(dat.ls, filterPostTransi, rmvMin = m)
