@@ -9,4 +9,4 @@ The NAME variable must be consitent between WEGAS.dat and GPS.csv. Multiple WEGA
 
 Navigate to your project directory in R (```setwd("path/to/PDIR")```) containing the respective files. Then run stable version of the script via: ```source("path/to/WEGAS_GPS/WEGAS_GPS_merge.R")```
 
-The merged output csv files will be stored in a new directory called ```merge```.
+The merged output csv files will be stored in a new directory called ```merged```.
