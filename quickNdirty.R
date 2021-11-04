@@ -99,4 +99,21 @@ comb2 = filterPostTransi(comb)
 
 n = sub(".dat$",".GPS.clean",files)
 write.csv(comb2, file = paste0("merged/",n,".csv"), row.names = F)
-#### DONE! :) #### 
+### DONE! :) ###
+
+
+### FINAL NOTE ###
+#' It's better to execute the above jobs via a stable Rscript.
+#' Rscript can be easily called in R via the command source("path/to/script.R")
+#' Here is an easy loop function to run the script on multiple project directories: 
+
+script = "~/DATA/Flo_data/WEGAS_GPS/WEGAS_GPS_merge.R" #This might differ for you
+PDIR = c("testRun1","testRun2","testRun3")# Names / Paths for the project directories from your pwd
+PWD = getwd()
+# Run script in loop for testRun project dir 1 to 3
+for(i in PDIR){
+  setwd(PDIR)
+  source(script)
+  setwd(PWD)
+}
+# Easy ;) 
